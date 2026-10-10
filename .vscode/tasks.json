@@ -1,0 +1,70 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build",
+      "type": "shell",
+      "command": "${workspaceFolder}/tools/idf.sh build",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Flash + Monitor",
+      "type": "shell",
+      "command": "${workspaceFolder}/tools/idf.sh -p ${input:serialPort} flash monitor",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Monitor",
+      "type": "shell",
+      "command": "${workspaceFolder}/tools/idf.sh -p ${input:serialPort} monitor",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Menuconfig",
+      "type": "shell",
+      "command": "${workspaceFolder}/tools/idf.sh menuconfig",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Size (Speicherverbrauch)",
+      "type": "shell",
+      "command": "${workspaceFolder}/tools/idf.sh size-components",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Full Clean",
+      "type": "shell",
+      "command": "${workspaceFolder}/tools/idf.sh fullclean",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Serielle Ports auflisten",
+      "type": "shell",
+      "command": "ls -1 /dev/cu.* 2>/dev/null || echo 'kein serieller Port gefunden'",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true }
+    },
+    {
+      "label": "Erase Flash",
+      "type": "shell",
+      "command": "${workspaceFolder}/tools/idf.sh -p ${input:serialPort} erase-flash",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "serialPort",
+      "type": "promptString",
+      "description": "Serieller Port des Boards",
+      "default": "/dev/cu.usbmodem5A7A0329631"
+    }
+  ]
+}

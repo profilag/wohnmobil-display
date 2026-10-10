@@ -1,0 +1,77 @@
+{
+  // ---------------------------------------------------------------------------
+  //  ESP-IDF-Extension (espressif.esp-idf-extension 2.1.x)
+  //  Die Extension liest Pfade und Python-Umgebung aus ~/.espressif/esp_idf.json
+  //  (von ESP-IDF Installation Manager gepflegt) — dort steht ESP-IDF 5.5.1 mit
+  //  dem funktionierenden Python-3.12-venv.
+  // ---------------------------------------------------------------------------
+  "idf.eimIdfJsonPath": "/Users/thomasclausmeyer/.espressif/esp_idf.json",
+  "idf.gitPath": "/usr/bin/git",
+
+  // Das System-python3 ist 3.14, dafür existiert kein IDF-venv. Diese Variable
+  // zwingt sämtliche IDF-Aufrufe auf das vorhandene 3.12-venv.
+  "idf.customExtraVars": {
+    "IDF_PYTHON_ENV_PATH": "/Users/thomasclausmeyer/.espressif/python_env/idf5.5_py3.12_env",
+    "IDF_TARGET": "esp32s3"
+  },
+
+  // --- Flashen / Monitor ------------------------------------------------------
+  // Verifizierter Port des Boards: "USB TO UART"-Buchse über den CH343P
+  // (1a86:55d3). Der Chip ist CDC-konform, deshalb heißt er "usbmodem…" und
+  // nicht "wchusbserial…". Auto-Reset über RTS/DTR funktioniert.
+  // Bei Anschluss an die Haupt-Buchse (nativer USB-Serial/JTAG) heißt der Port
+  // anders — dann auf "detect" stellen oder neu eintragen.
+  "idf.port": "/dev/cu.usbmodem5A7A0329631",
+  "idf.flashType": "UART",
+  "idf.flashBaudRate": "921600",
+  "idf.monitorBaudRate": "115200",
+  "idf.enableSerialPortChipIdRequest": true,
+
+  // --- Debugging über den eingebauten JTAG des S3 -----------------------------
+  "idf.openOcdConfigs": ["board/esp32s3-builtin.cfg"],
+  "idf.openOcdDebugLevel": 2,
+
+  // --- Build ------------------------------------------------------------------
+  "idf.buildPath": "${workspaceFolder}/build",
+  "idf.enableIdfComponentManager": true,
+  // ccache ist auf diesem Rechner nicht installiert. Nach `brew install ccache`
+  // kann das hier auf true gesetzt werden — beschleunigt Rebuilds deutlich.
+  "idf.enableCCache": false,
+  "idf.saveBeforeBuild": true,
+  "idf.sdkconfigDefaults": ["sdkconfig.defaults"],
+  "idf.enableSizeTaskAfterBuildTask": true,
+  "idf.notificationMode": "All",
+  "idf.showOnboardingOnInit": false,
+  // Neue Quelldateien nicht automatisch in CMakeLists eintragen — das Projekt
+  // pflegt seine SRCS-Listen bewusst selbst.
+  "idf.enableUpdateSrcsToCMakeListsFile": false,
+
+  // --- C/C++ ------------------------------------------------------------------
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+  "C_Cpp.default.cStandard": "c17",
+  "C_Cpp.default.cppStandard": "c++23",
+  "C_Cpp.intelliSenseEngine": "default",
+  "C_Cpp.default.intelliSenseMode": "gcc-x64",
+
+  // cmake-tools soll sich nicht mit der IDF-Extension um das Projekt streiten
+  "cmake.configureOnOpen": false,
+  "cmake.automaticReconfigure": false,
+
+  "files.associations": {
+    "*.h": "c",
+    "sdkconfig": "properties",
+    "sdkconfig.defaults": "properties",
+    "*.csv": "csv"
+  },
+  "files.exclude": {
+    "**/build": true,
+    "**/managed_components": true
+  },
+  "search.exclude": {
+    "**/build": true,
+    "**/managed_components": true
+  },
+  "editor.formatOnSave": false,
+  "[c]": { "editor.tabSize": 4, "editor.insertSpaces": true },
+  "[cpp]": { "editor.tabSize": 4, "editor.insertSpaces": true }
+}

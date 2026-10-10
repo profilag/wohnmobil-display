@@ -1,0 +1,22 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "ESP-IDF",
+      // compile_commands.json wird beim Build erzeugt und enthält alle Include-
+      // Pfade und Defines exakt so, wie der Compiler sie sieht. Deshalb keine
+      // manuelle includePath-Pflege nötig — nach neuen Komponenten einfach neu
+      // bauen, dann findet IntelliSense sie automatisch.
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+      "compilerPath": "${env:HOME}/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc",
+      "cStandard": "c17",
+      "cppStandard": "c++23",
+      "intelliSenseMode": "gcc-x64",
+      "includePath": ["${workspaceFolder}/**"],
+      "browse": {
+        "path": ["${workspaceFolder}", "${env:HOME}/esp/esp-idf/components"],
+        "limitSymbolsToIncludedHeaders": true
+      }
+    }
+  ]
+}

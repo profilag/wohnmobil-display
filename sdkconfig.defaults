@@ -1,0 +1,174 @@
+# =============================================================================
+#  Waveshare ESP32-S3-Touch-LCD-7  —  Projekt-Defaults
+#
+#  Diese Datei ist die Quelle der Wahrheit. `sdkconfig` selbst wird generiert
+#  und gehört nicht ins Git. Nach Änderungen hier:  idf.py reconfigure
+# =============================================================================
+
+CONFIG_IDF_TARGET="esp32s3"
+
+# --- Flash: 16 MB, QIO @ 80 MHz -----------------------------------------------
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# --- PSRAM: 8 MB Octal @ 80 MHz -----------------------------------------------
+# Ohne PSRAM passt der 800x480-Framebuffer nicht in den Speicher.
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_SPEED_80M=y
+CONFIG_SPIRAM_USE_MALLOC=y
+CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP=y
+# Kleine Zuteilungen dürfen ins PSRAM.
+#
+# 16 kB hieß in der Praxis: **alles** von LVGL landet im internen RAM, denn
+# einzelne Objekte sind ein paar hundert Byte groß. Das ging, solange LVGL
+# direkt in die Framebuffer zeichnete. Seit die Zeichenstreifen im internen RAM
+# liegen (siehe bsp_ws_lcd7.c), fehlen dort 51 kB — und der Webserver bekam
+# keinen Speicher mehr für seine Aufgabe.
+#
+# 2 kB schiebt die vielen kleinen LVGL-Objekte ins PSRAM und lässt den internen
+# RAM denen, die ihn wirklich brauchen: DMA-Puffern, Interrupts, Aufgabenstapeln.
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=2048
+
+# --- CPU / Scheduler ----------------------------------------------------------
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+
+# --- RGB-LCD ------------------------------------------------------------------
+# RESTART_IN_VSYNC verhindert das dauerhafte Verrutschen des Bildes, falls die
+# DMA einmal aus dem Tritt kommt.
+CONFIG_LCD_RGB_RESTART_IN_VSYNC=y
+
+# LCD_RGB_ISR_IRAM_SAFE bleibt AUS — und zwar zwingend, nicht aus Vorsicht.
+#
+# Die Option soll den LCD-Interrupt auch bei abgeschaltetem Cache lauffähig
+# halten. Das ist mit dieser Konfiguration unmöglich: Der Interrupt füllt den
+# Bounce-Buffer **aus dem Framebuffer im PSRAM** nach, und PSRAM wird über
+# denselben Cache erreicht. Ist der Cache aus, greift der Interrupt auf
+# gecachten Speicher zu, den es gerade nicht gibt — die Folge ist
+# "Cache disabled but cached memory region accessed" und ein Dauerneustart.
+#
+# Sinnvoll wäre die Option nur, wenn der Framebuffer im internen RAM läge.
+# Bei 800 × 480 × 2 Byte kommt das hier nicht in Frage.
+
+# --- LVGL 9 -------------------------------------------------------------------
+CONFIG_LV_COLOR_DEPTH_16=y
+
+# Speicher aus dem System-Heap statt aus LVGLs eigenem Topf.
+#
+# Voreingestellt hat LVGL einen **festen** Pool von 64 kB, der nicht wachsen
+# kann (LV_MEM_POOL_EXPAND_SIZE = 0). Verläufe, Schatten und Widgets holen sich
+# ihren Zeichenspeicher daraus; reicht er nicht, greift LV_USE_ASSERT_MALLOC und
+# ruft abort() — das Board startet neu. Genau das passierte beim Wechsel auf die
+# Home-Seite, nachdem dort Verläufe und ein Farbring dazukamen.
+#
+# Mit der C-Bibliothek liegt LVGL im normalen Heap: über 190 kB intern, dazu
+# PSRAM für alles über 16 kB (siehe SPIRAM_MALLOC_ALWAYSINTERNAL). Damit
+# verschwindet die feste Obergrenze, statt sie nur höher zu setzen.
+CONFIG_LV_USE_CLIB_MALLOC=y
+CONFIG_LV_USE_CLIB_STRING=y
+# Nebenwirkung, die eine alte Falle schließt: LVGLs eingebautes printf kann
+# kein %f. Das der C-Bibliothek kann es.
+CONFIG_LV_USE_CLIB_SPRINTF=y
+# FPS-/CPU-Anzeige unten rechts: im Betrieb nur störend, deshalb aus.
+# PERF_MONITOR hängt an SYSMON — zum Wiedereinschalten beide auf y.
+CONFIG_LV_USE_SYSMON=n
+CONFIG_LV_USE_PERF_MONITOR=n
+CONFIG_LV_DEF_REFR_PERIOD=16
+CONFIG_LV_FONT_MONTSERRAT_14=y
+CONFIG_LV_FONT_MONTSERRAT_20=y
+CONFIG_LV_FONT_MONTSERRAT_28=y
+CONFIG_LV_USE_DEMO_WIDGETS=y
+CONFIG_LV_USE_DEMO_BENCHMARK=y
+
+# --- Bluetooth LE: Beobachter und Client --------------------------------------
+# NimBLE statt Bluedroid — spürbar sparsamer im RAM. Zwei Rollen werden
+# gebraucht: Observer für den Scanner (ble_scan.h) und Central für den
+# LED-Streifen (led_ble.h). Peripheral und Broadcaster bleiben aus — das Board
+# sendet keine eigenen Advertisements und lässt sich nicht verbinden.
+# Der Stack wird erst bei Bedarf hochgefahren, der Bootvorgang bleibt
+# also unverändert.
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+CONFIG_BT_NIMBLE_ROLE_OBSERVER=y
+CONFIG_BT_NIMBLE_ROLE_CENTRAL=y
+# Peripheral-Rolle AN — und zwar nicht, um selbst zu werben.
+#
+# In NimBLE hängt am Peripheral-Schalter auch der ATT-**Server**
+# (CONFIG_BT_NIMBLE_GATT_SERVER, "depends on BT_NIMBLE_ROLE_PERIPHERAL"). Und
+# in der Empfangstabelle von ble_att.c steht ausgerechnet
+#     { BLE_ATT_OP_NOTIFY_REQ, ble_att_svr_rx_notify }
+# innerhalb von #if MYNEWT_VAL(BLE_GATTS). Eine **eingehende** Benachrichtigung
+# ist auf ATT-Ebene eine Anfrage an den Server — ohne Server wird sie also
+# stillschweigend verworfen, obwohl das Board als Client verbunden ist.
+#
+# Genau daran scheiterte der Akku: Das BMS sendete, unser Host warf weg. Im Log
+# war davon nichts zu sehen, weil das Paket nie bis zur Anwendung kam.
+#
+# Geworben wird trotzdem nicht: Broadcaster bleibt aus, und wir rufen nie
+# ble_gap_adv_start(). Das Board bleibt unsichtbar und unverbindbar.
+CONFIG_BT_NIMBLE_ROLE_PERIPHERAL=y
+CONFIG_BT_NIMBLE_GATT_SERVER=y
+CONFIG_BT_NIMBLE_ROLE_BROADCASTER=n
+# Zwei gleichzeitige Verbindungen: LED-Streifen und der GATT-Erkunder am Akku.
+CONFIG_BT_NIMBLE_MAX_CONNECTIONS=2
+# Kopplungsspeicher im NVS. War anfangs aus, weil ohne Verbindungen nichts zu
+# binden ist und NVS-Schreibzugriffe den Cache anhalten — was am RGB-Panel
+# sichtbar wird. Inzwischen wird er gebraucht: `ble_gap_security_initiate()`
+# prüft als Erstes, ob Platz für eine neue Kopplung im Speicher ist, und ohne
+# Speicher liefert diese Prüfung BLE_HS_ENOTSUP. Genau daran scheiterte die
+# Kopplung — erkennbar auch am Bootlog: "Failed to restore IRKs from store;
+# status=8", derselbe Fehlercode.
+# Geschrieben wird nur beim Koppeln, nicht laufend; das Risiko fürs Bild ist
+# damit auf einzelne Ereignisse begrenzt.
+CONFIG_BT_NIMBLE_NVS_PERSIST=y
+
+# Funk auf den zweiten Kern.
+#
+# Voreingestellt läuft der BLE-Controller auf Kern 0 — dort, wo auch die
+# Hauptaufgabe startet und deshalb der Interrupt des RGB-Panels eingehängt ist.
+# Der muss den Bounce-Puffer rechtzeitig nachfüllen; kommt er zu spät, gibt die
+# DMA alte Daten aus und es entstehen verrutschte, zappelnde Zeilen.
+#
+# Seit der Akku dauerhaft verbunden ist, kommt zum Victron-Scan noch ein
+# stetiger Strom von Benachrichtigungen. Beides zusammen auf demselben Kern wie
+# das Panel ist unnötig eng — der zweite Kern hat wenig zu tun.
+CONFIG_BT_CTRL_PINNED_TO_CORE_1=y
+CONFIG_BT_NIMBLE_PINNED_TO_CORE_1=y
+
+# --- Konsole ------------------------------------------------------------------
+# Das Board hat zwei USB-C-Buchsen: die Haupt-Buchse hängt am nativen
+# USB-Serial/JTAG des ESP32-S3 (Flashen + Log), die zweite an einem CH343P
+# USB-UART-Wandler. Deshalb Logs bewusst auf BEIDEN Wegen ausgeben — UART0 als
+# primäre Konsole, USB-Serial/JTAG als sekundäre. So sieht man die Ausgabe
+# unabhängig davon, welche Buchse gerade am Rechner hängt.
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG=y
+CONFIG_ESP_INT_WDT_TIMEOUT_MS=800
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=10
+
+# --- WLAN neben Bluetooth --------------------------------------------------
+#
+# Der ESP32-S3 hat einen Sender für beides. Die Koexistenz-Schicht teilt ihm
+# die Zeit zu; ohne sie verdrängt das zuletzt gestartete Funkmodul das andere.
+# Das kostet spürbar: Der Akku wird seltener abgefragt, der Victron-Empfang
+# verliert Pakete. Dafür gibt es die Anzeige auch auf dem Telefon.
+CONFIG_ESP_COEX_SW_COEXIST_ENABLE=y
+# Puffer für WLAN und lwIP möglichst ins PSRAM, der interne RAM ist knapp.
+CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=8
+CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=16
+CONFIG_ESP_WIFI_TX_BUFFER_TYPE=1
+CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM=16
+
+# WLAN-Aufgabe auf den zweiten Kern, wie schon Bluetooth.
+#
+# Auf Kern 0 hängt der Interrupt des RGB-Panels, der den Bounce-Puffer
+# rechtzeitig nachfüllen muss. Kommt er zu spät, gibt die DMA alte Daten aus —
+# die bekannten Geisterzeilen am linken Rand. Seit WLAN dazukam, teilte sich
+# dessen Aufgabe diesen Kern mit dem Panel; der zweite hat dagegen wenig zu tun.
+CONFIG_ESP_WIFI_TASK_PINNED_TO_CORE_1=y

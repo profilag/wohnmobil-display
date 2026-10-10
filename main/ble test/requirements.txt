@@ -1,0 +1,8 @@
+# HumsiENK BLE read-only client
+#
+# Nur eine echte Laufzeit-Abhaengigkeit: bleak (nutzt auf macOS CoreBluetooth).
+bleak>=0.22
+
+# Optional, aktuell NICHT benoetigt:
+#   rich>=13.0        # erst wenn der Live-Monitor (Phase 9) davon profitiert
+#   pytest>=8.0       # fuer tests/ ab Phase 6

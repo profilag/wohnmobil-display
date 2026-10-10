@@ -1,0 +1,18 @@
+build/
+managed_components/
+dependencies.lock
+sdkconfig
+sdkconfig.old
+.DS_Store
+*.elf
+*.bin
+*.map
+
+# lokale Zugangsdaten
+main/secrets.h
+
+# Python (main/ble test)
+.venv/
+__pycache__/
+*.pyc
+main/ble test/captures/

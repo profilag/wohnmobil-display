@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Debuggen über den im ESP32-S3 eingebauten USB-JTAG — es ist keine
+      // externe Debug-Probe nötig, dieselbe USB-C-Buchse genügt.
+      // Vorher in der Command Palette "ESP-IDF: OpenOCD Manager" starten,
+      // oder die Extension startet OpenOCD beim Debug-Start selbst.
+      "name": "ESP-IDF: Debug (USB-JTAG)",
+      "type": "gdbtarget",
+      "request": "attach",
+      "program": "${workspaceFolder}/build/ws-s3-lcd7.elf",
+      "initCommands": [
+        "set remote hardware-watchpoint-limit 2",
+        "mon reset halt",
+        "maintenance flush register-cache",
+        "thb app_main"
+      ],
+      "gdb": "${env:HOME}/.espressif/tools/xtensa-esp-elf-gdb/16.2_20250324/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb",
+      "target": { "connectCommands": ["target extended-remote localhost:3333"] }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+dependencies:
+  idf:
+    version: ">=5.4"
+# Die Board-/Display-Abhängigkeiten (LVGL, GT911, esp_lvgl_port) werden von
+# components/bsp_ws_lcd7/idf_component.yml gezogen. Lokale Komponenten unter
+# components/ findet das Build-System automatisch.
