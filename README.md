@@ -8,6 +8,7 @@ CH422G-On-Board-Expander und dem externen **AW9523B**-IO-Modul am gleichen I2C-B
 ```bash
 cd ~/esp/projects/ws-s3-lcd7
 
+cp main/secrets.example.h main/secrets.h   # einmalig: Victron-Schlüssel, WLAN, BMS-MAC eintragen
 ./tools/idf.sh build                     # bauen
 ./tools/idf.sh -p /dev/cu.usbmodem5A7A0329631 flash monitor
 ```
